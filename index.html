@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Supervision Lab</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar" aria-label="Основная панель">
+        <a class="brand" href="./index.html" aria-label="Supervision Lab">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" role="img">
+              <path d="M20 4.5c8.56 0 15.5 6.94 15.5 15.5S28.56 35.5 20 35.5 4.5 28.56 4.5 20 11.44 4.5 20 4.5Z" />
+              <path d="M13.5 21.4c3.45-5.95 9.55-5.95 13 0M14.8 16.2h10.4M16.7 25.2h6.6" />
+            </svg>
+          </span>
+          <span>Supervision Lab</span>
+        </a>
+        <div class="status-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          MVP
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="input-panel" aria-labelledby="input-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Материал</p>
+              <h1 id="input-title">Разбор сессии или супервизии</h1>
+            </div>
+            <div class="metric">
+              <span id="word-count">0</span>
+              <small>слов</small>
+            </div>
+          </div>
+
+          <label class="textarea-label" for="transcript">Транскрибация</label>
+          <textarea
+            id="transcript"
+            spellcheck="true"
+            placeholder="Вставьте фрагмент сессии, консультации или супервизионного обсуждения..."
+          ></textarea>
+
+          <div class="toolbar" aria-label="Действия с материалом">
+            <button class="icon-button secondary" id="sample-button" type="button" title="Вставить пример" aria-label="Вставить пример">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 4h16v16H4z" />
+                <path d="M8 8h8M8 12h8M8 16h5" />
+              </svg>
+            </button>
+            <button class="icon-button secondary" id="clear-button" type="button" title="Очистить" aria-label="Очистить">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2M8 10v8M12 10v8M16 10v8M6 6l1 14h10l1-14" />
+              </svg>
+            </button>
+            <button class="primary-button" id="analyze-button" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 12h4l3-7 4 14 3-7h2" />
+              </svg>
+              Проанализировать
+            </button>
+          </div>
+        </section>
+
+        <section class="result-panel" aria-labelledby="result-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Анализ</p>
+              <h2 id="result-title">Структурированный обзор</h2>
+            </div>
+            <button class="icon-button secondary" id="copy-button" type="button" title="Скопировать анализ" aria-label="Скопировать анализ" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 8h10v12H8z" />
+                <path d="M6 16H4V4h12v2" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="empty-state" id="empty-state">
+            <div class="empty-visual" aria-hidden="true">
+              <svg viewBox="0 0 220 150" role="img">
+                <path class="visual-soft" d="M30 104c20-48 60-72 101-61 32 9 57 37 63 71H30Z" />
+                <path class="visual-line" d="M61 99c17-22 39-32 66-29 19 2 34 11 46 27" />
+                <path class="visual-line" d="M74 78h58M74 94h82M74 110h50" />
+                <circle class="visual-accent" cx="164" cy="56" r="12" />
+              </svg>
+            </div>
+            <p>Здесь появятся наблюдения, гипотезы и вопросы для супервизии.</p>
+          </div>
+
+          <div class="analysis-grid" id="analysis-output" hidden></div>
+
+          <aside class="safety-note" aria-label="Ограничения">
+            <strong>Профессиональные рамки</strong>
+            <span>Инструмент не ставит диагноз, не заменяет супервизию и не принимает клинические решения за специалиста.</span>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
