@@ -253,6 +253,15 @@ textarea:focus {
   opacity: 0.45;
 }
 
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.primary-button.is-loading svg {
+  animation: pulse-line 1.2s ease-in-out infinite;
+}
+
 button svg {
   width: 20px;
   height: 20px;
@@ -357,6 +366,17 @@ button svg {
 
 .safety-note span {
   color: #5c4743;
+}
+
+@keyframes pulse-line {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 960px) {

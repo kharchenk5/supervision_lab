@@ -1,0 +1,9 @@
+{
+  "name": "supervision-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MVP веб-приложения для структурированного анализа сессий и супервизий.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
