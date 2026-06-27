@@ -82,13 +82,6 @@ server.listen(PORT, () => {
 });
 
 async function handleAnalyze(request, response) {
-  if (!OPENAI_API_KEY) {
-    sendJson(response, 500, {
-      error: "Не найден OPENAI_API_KEY. Добавьте ключ в .env или переменную окружения и перезапустите сервер.",
-    });
-    return;
-  }
-
   const body = await readJsonBody(request);
   const transcript = String(body.transcript || "").trim();
 
@@ -99,6 +92,11 @@ async function handleAnalyze(request, response) {
 
   if (transcript.length > 60000) {
     sendJson(response, 413, { error: "Текст слишком длинный для MVP. Попробуйте фрагмент до 60 000 символов." });
+    return;
+  }
+
+  if (!OPENAI_API_KEY) {
+    sendJson(response, 200, createDemoAnalysis(transcript, "Демо-режим: OpenAI API ключ не задан."));
     return;
   }
 
@@ -127,13 +125,165 @@ async function handleAnalyze(request, response) {
 
   if (!aiResponse.ok) {
     const message = payload.error?.message || "OpenAI API вернул ошибку.";
-    sendJson(response, aiResponse.status, { error: message });
+    sendJson(response, 200, createDemoAnalysis(transcript, getDemoReason(message)));
     return;
   }
 
-  const outputText = extractOutputText(payload);
-  const analysis = JSON.parse(outputText);
-  sendJson(response, 200, analysis);
+  try {
+    const outputText = extractOutputText(payload);
+    const analysis = JSON.parse(outputText);
+    sendJson(response, 200, analysis);
+  } catch (error) {
+    sendJson(response, 200, createDemoAnalysis(transcript, "Демо-режим: не удалось разобрать ответ ИИ."));
+  }
+}
+
+function getDemoReason(message) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("quota") || normalized.includes("billing") || normalized.includes("limit")) {
+    return "Демо-режим: лимит OpenAI сейчас недоступен, поэтому показан локальный пример анализа.";
+  }
+
+  if (normalized.includes("api key") || normalized.includes("authentication") || normalized.includes("unauthorized")) {
+    return "Демо-режим: ключ OpenAI не подключен или не прошел проверку.";
+  }
+
+  return "Демо-режим: OpenAI API сейчас недоступен, поэтому показан локальный пример анализа.";
+}
+
+function createDemoAnalysis(transcript, reason) {
+  const words = countWords(transcript);
+  const sentences = transcript.split(/[.!?]+/).map((item) => item.trim()).filter(Boolean);
+  const themes = findMatches(transcript, demoDictionaries.themes);
+  const emotions = findMatches(transcript, demoDictionaries.emotions);
+  const interventions = findMatches(transcript, demoDictionaries.interventions);
+  const speakers = getSpeakerStats(transcript);
+  const hasDialogue = speakers.clientLines > 0 && speakers.specialistLines > 0;
+
+  return {
+    mode: "demo",
+    blocks: [
+      {
+        title: "Демо-режим",
+        accent: "#b88034",
+        body: reason,
+        items: [
+          "Это локальная демонстрация структуры анализа, а не полноценный ответ ИИ.",
+          "Когда появится доступ к OpenAI API, этот же экран сможет возвращать настоящий анализ.",
+        ],
+      },
+      {
+        title: "Краткое резюме",
+        accent: "#1f5d7a",
+        body: `Материал содержит примерно ${words} слов и ${sentences.length} смысловых фрагментов. ${hasDialogue ? "В тексте виден диалог клиента и специалиста." : "Текст можно дополнительно разметить по ролям, чтобы обзор был точнее."}`,
+        items: [],
+      },
+      {
+        title: "Ключевые темы",
+        accent: "#3d7258",
+        body: "",
+        items: buildDemoItems(
+          themes.map((theme) => `В материале заметна тема: ${theme}.`),
+          ["Повторяющиеся темы не выделены автоматически. В демо-режиме стоит вручную отметить главные смысловые линии."]
+        ),
+      },
+      {
+        title: "Эмоциональная динамика",
+        accent: "#9f4f45",
+        body: "",
+        items: buildDemoItems(
+          emotions.map((emotion) => `Возможный эмоциональный акцент: ${emotion}.`),
+          ["Явные эмоциональные маркеры не обнаружены. Можно отдельно посмотреть тон, паузы и изменения напряжения."]
+        ),
+      },
+      {
+        title: "Динамика отношений",
+        accent: "#b88034",
+        body: hasDialogue
+          ? "Материал можно рассматривать через качество контакта: где появляется сближение, где осторожность, сопротивление или поиск поддержки."
+          : "Для оценки отношений полезно добавить реплики обеих сторон и отметить, где меняется контакт между участниками.",
+        items: [],
+      },
+      {
+        title: "Интервенции специалиста",
+        accent: "#1f5d7a",
+        body: "",
+        items: buildDemoItems(
+          interventions.map((item) => `Возможный тип интервенции: ${item}.`),
+          ["Интервенции не распознаны демо-алгоритмом. Можно отдельно отметить вопросы, отражения и фокус на процессе."]
+        ),
+      },
+      {
+        title: "Возможные гипотезы",
+        accent: "#3d7258",
+        body: "",
+        items: buildDemoItems(
+          [
+            themes.includes("избегание") ? "Избегание может быть способом краткосрочно снизить напряжение, но поддерживать проблему в долгую." : "",
+            emotions.includes("вина") ? "Вина может конкурировать с выражением злости или потребностей." : "",
+            themes.includes("отношения") ? "Тема контакта и риска отвержения может быть важной для дальнейшего исследования." : "",
+          ].filter(Boolean),
+          ["Гипотезы требуют проверки в супервизии и не являются готовыми клиническими выводами."]
+        ),
+      },
+      {
+        title: "Вопросы для супервизии",
+        accent: "#9f4f45",
+        body: "",
+        items: [
+          "Где специалисту было сложнее всего сохранять позицию наблюдения?",
+          "Какие чувства клиента могли отразиться в реакции специалиста?",
+          "Что важно уточнить на следующей встрече, не превращая гипотезу в диагноз?",
+        ],
+      },
+    ],
+  };
+}
+
+const demoDictionaries = {
+  emotions: {
+    тревога: ["тревог", "страх", "боюсь", "паник", "напряж"],
+    злость: ["злю", "злость", "раздраж", "ярост"],
+    вина: ["вина", "винов", "стыд"],
+    печаль: ["груст", "печаль", "плак", "одинок"],
+    усталость: ["устал", "выгор", "нет сил"],
+  },
+  themes: {
+    границы: ["границ", "отказать", "нельзя", "должен", "должна"],
+    отношения: ["отнош", "контакт", "близ", "отверг", "партнер"],
+    самооценка: ["не справ", "плох", "недостат", "ценност"],
+    избегание: ["отклады", "молчу", "избег", "не говор"],
+    контроль: ["контрол", "провер", "идеально"],
+  },
+  interventions: {
+    "уточняющие вопросы": ["что", "как", "когда", "почему"],
+    "отражение чувств": ["похоже", "звучит", "слышно", "чувств"],
+    "фокус на процессе": ["между нами", "сейчас", "в сессии", "в контакте"],
+    гипотеза: ["может быть", "возможно", "как будто"],
+  },
+};
+
+function countWords(text) {
+  const matches = text.trim().match(/[A-Za-zА-Яа-яЁё0-9-]+/g);
+  return matches ? matches.length : 0;
+}
+
+function findMatches(text, group) {
+  const normalized = text.toLowerCase();
+  return Object.entries(group)
+    .filter(([, needles]) => needles.some((needle) => normalized.includes(needle)))
+    .map(([label]) => label);
+}
+
+function getSpeakerStats(text) {
+  const clientLines = (text.match(/(^|\n)\s*(клиент|пациент|супервизант)\s*:/gi) || []).length;
+  const specialistLines = (text.match(/(^|\n)\s*(психолог|терапевт|супервизор|специалист)\s*:/gi) || []).length;
+  return { clientLines, specialistLines };
+}
+
+function buildDemoItems(items, fallback) {
+  return items.length ? items : fallback;
 }
 
 function serveStaticFile(request, response) {

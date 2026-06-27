@@ -43,11 +43,13 @@ function renderAnalysis(blocks) {
 }
 
 function renderBlockContent(block) {
+  const body = block.body ? `<p>${escapeHtml(block.body)}</p>` : "";
+
   if (Array.isArray(block.items) && block.items.length) {
-    return `<ul>${block.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+    return `${body}<ul>${block.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
   }
 
-  return `<p>${escapeHtml(block.body || "")}</p>`;
+  return body;
 }
 
 function blockToText(block) {
@@ -101,7 +103,7 @@ async function requestAiAnalysis(transcript) {
     throw new Error("ИИ-агент вернул неожиданный формат ответа.");
   }
 
-  return payload.blocks;
+  return payload;
 }
 
 function escapeHtml(value) {
@@ -148,8 +150,8 @@ analyzeButton.addEventListener("click", async () => {
   renderStatus("Сейчас подготовлю структурированный обзор без диагнозов и клинических решений.");
 
   try {
-    const blocks = await requestAiAnalysis(text);
-    renderAnalysis(blocks);
+    const result = await requestAiAnalysis(text);
+    renderAnalysis(result.blocks);
   } catch (error) {
     renderStatus(error.message, "error");
   } finally {
